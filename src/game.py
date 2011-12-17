@@ -12,6 +12,7 @@ class Bullet(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.player = player
         self.image = load_image('res/bullet.png')
+        self.original_image = self.image
         self.rect = pygame.rect.Rect(-1, -1, 0, 0)
         self.xdir = 1.0
         self.ydir = 1.0
@@ -22,33 +23,27 @@ class Bullet(pygame.sprite.Sprite):
         if self.fired:
             self.rect.x += self.xdir * self.speed
             self.rect.y += self.ydir * self.speed
-        
-    def fire(self, position, pRotation):
+        elif self.fired:
+            self.rect = copy.copy(self.player.rect)
+                
+    def fire(self):
         self.fired = True
-        self.xdir = math.cos(math.radians(pRotation + 90))
-        self.ydir = -math.sin(math.radians(pRotation + 90))
-        self.rect = copy.copy(position)
-        self.rect.x = self.rect.centerx
-        self.rect.y = self.rect.centery
+        self.xdir = math.cos(math.radians(self.player.rotated + 90))
+        self.ydir = -math.sin(math.radians(self.player.rotated + 90))
+        self.rect = copy.copy(self.player.rect)
+        
+        rect_center = self.rect.center
+        self.image = pygame.transform.rotate(self.original_image, self.player.rotated)
+        self.rect = self.image.get_rect()
+        self.rect.center = rect_center
 
 class Guy():
     def __init__(self): 
-        self.crosshairdist = 20
-        self.surface = pygame.Surface((32, 32 + 16 + self.crosshairdist))
-        self.surface.fill(WHITE)
         self.image = load_image('res/guy.png')
-        self.crosshair = load_image('res/crosshair1.png')
-        self.surface.blit(self.image, (0, 16 + self.crosshairdist))
-        self.surface.blit(self.crosshair, (8,0))
-        self.original_image = self.surface 
-        self.position = self.surface.get_rect()
-        self.position.centery -= 16
-        self.position.move_ip(RESOLUTION[0] / 2, RESOLUTION[1] / 2)
+        self.original_image = self.image
+        self.rect = self.image.get_rect()
+        self.rect.move_ip(RESOLUTION[0] / 2, RESOLUTION[1] / 2)
         
-#        self.bullet = load_image('res/bullet.png')
-#        self.bullet_pos = self.bullet.get_rect()
-#        self.bullet_pos.centerx = self.position.centerx
-#        self.bullet_pos.centery = self.position.centery
         
         self.speed = 3
         self.rotateSpeed = 5
@@ -56,17 +51,13 @@ class Guy():
     
     def moveGuy(self, keys):
         if keys[left]:
-            self.position[0] -= self.speed
+            self.rect[0] -= self.speed
         if keys[right]:
-            self.position[0] += self.speed
+            self.rect[0] += self.speed
         if keys[up]:
-            self.position[1] -= self.speed
+            self.rect[1] -= self.speed
         if keys[down]:
-            self.position[1] += self.speed
-            
-#        if keys[K_SPACE]:
-#            self.bullet_pos.x += math.cos(math.radians(self.rotated + 90)) * 10
-#            self.bullet_pos.y += -math.sin(math.radians(self.rotated + 90)) * 10
+            self.rect[1] += self.speed
         
     
     def rotateGuy(self, keys):
@@ -80,10 +71,10 @@ class Guy():
         elif self.rotated <= -360:
             self.rotated = 360
         
-        rect_center = self.position.center
-        self.surface = pygame.transform.rotate(self.original_image, self.rotated)
-        self.position = self.surface.get_rect()
-        self.position.center = rect_center
+        rect_center = self.rect.center
+        self.image = pygame.transform.rotate(self.original_image, self.rotated)
+        self.rect = self.image.get_rect()
+        self.rect.center = rect_center
         
             
 def load_image(image, transparency = True, colorkey = (255, 0, 255)):
@@ -123,9 +114,8 @@ def main():
     while True:
         # Render code 
         main_surface.fill(WHITE)
-        main_surface.blit(guy.surface, guy.position)
         main_surface.blit(bullet.image, bullet.rect)
-        
+        main_surface.blit(guy.image, guy.rect)
         
         # Update code
         bullet.update()
@@ -143,7 +133,7 @@ def main():
                     pygame.quit()
                     exit()
                 if evt.key == K_SPACE:
-                    bullet.fire(guy.position, guy.rotated)
+                    bullet.fire()
 
         pygame.display.update()
         fpsTimer.tick(TARGET_FPS)
