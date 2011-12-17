@@ -6,6 +6,28 @@ import math
 import copy
 
 SYSTEMPATH = sys.path[0]
+           
+def load_image(image, transparency = True, colorkey = (255, 0, 255)):
+    """ Classic pygame loading image function :D """
+    
+    # Silly windows, you need extra code to load files
+    tmp = image.rsplit('/')
+    tmp_file = os.path.join(SYSTEMPATH, tmp[0])
+    for t_substr in tmp[1:]:
+        tmp_file = os.path.join(tmp_file, t_substr)
+    
+    try:
+        image_sur = pygame.image.load(tmp_file)
+    except Exception:
+        print 'Wrong image path buddy'
+        raise SystemExit
+    
+    image_sur = image_sur.convert()
+    if transparency:
+        # The RLEACCEL is supposed to be faster on non-accelerated screens...not sure why :P
+        image_sur.set_colorkey(image_sur.get_at((0,0)), pygame.RLEACCEL) 
+    
+    return image_sur
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, player):
@@ -43,8 +65,7 @@ class Guy():
         self.original_image = self.image
         self.rect = self.image.get_rect()
         self.rect.move_ip(RESOLUTION[0] / 2, RESOLUTION[1] / 2)
-        
-        
+    
         self.speed = 3
         self.rotateSpeed = 5
         self.rotated = 0
@@ -75,29 +96,6 @@ class Guy():
         self.image = pygame.transform.rotate(self.original_image, self.rotated)
         self.rect = self.image.get_rect()
         self.rect.center = rect_center
-        
-            
-def load_image(image, transparency = True, colorkey = (255, 0, 255)):
-    """ Classic pygame loading image function :D """
-    
-    # Silly windows, you need extra code to load files
-    tmp = image.rsplit('/')
-    tmp_file = os.path.join(SYSTEMPATH, tmp[0])
-    for t_substr in tmp[1:]:
-        tmp_file = os.path.join(tmp_file, t_substr)
-    
-    try:
-        image_sur = pygame.image.load(tmp_file)
-    except Exception:
-        print 'Wrong image path buddy'
-        raise SystemExit
-    
-    image_sur = image_sur.convert()
-    if transparency:
-        # The RLEACCEL is supposed to be faster on non-accelerated screens...not sure why :P
-        image_sur.set_colorkey(image_sur.get_at((0,0)), pygame.RLEACCEL) 
-    
-    return image_sur
 
 def getCrosshairPosition(playerPosition):
     return (60,60)    
